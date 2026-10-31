@@ -14,14 +14,14 @@
   "scripts": {
     "dev": "concurrently -k -n api,web -c cyan,green \"npm run dev:api\" \"npm run dev:web\"",
     "setup": "node scripts/setup.mjs",
-    "db:migrate": "wrangler d1 migrations apply dastaan --config database/wrangler.json --local --persist-to .data",
-    "db:seed": "wrangler d1 execute dastaan --config database/wrangler.json --local --persist-to .data --file database/seed/seed.sql",
+    "db:migrate": "wrangler d1 migrations apply dastaan --config wrangler.json --local --persist-to .data",
+    "db:seed": "wrangler d1 execute dastaan --config wrangler.json --local --persist-to .data --file database/seed/seed.sql",
     "db:people": "node scripts/import-people.mjs",
     "db:import": "node scripts/import-people.mjs --clear",
-    "db:sample": "wrangler d1 execute dastaan --config database/wrangler.json --local --persist-to .data --file database/seed/dev-users.sql",
-    "db:clean": "wrangler d1 execute dastaan --config database/wrangler.json --local --persist-to .data --file database/seed/clean.sql",
-    "db:migrate:prod": "wrangler d1 migrations apply dastaan --config database/wrangler.json --remote",
-    "db:seed:prod": "wrangler d1 execute dastaan --config database/wrangler.json --remote --file database/seed/seed.sql",
+    "db:sample": "wrangler d1 execute dastaan --config wrangler.json --local --persist-to .data --file database/seed/dev-users.sql",
+    "db:clean": "wrangler d1 execute dastaan --config wrangler.json --local --persist-to .data --file database/seed/clean.sql",
+    "db:migrate:prod": "wrangler d1 migrations apply dastaan --config wrangler.json --remote",
+    "db:seed:prod": "wrangler d1 execute dastaan --config wrangler.json --remote --file database/seed/seed.sql",
     "db:people:prod": "node scripts/import-people.mjs --prod",
     "db:import:prod": "node scripts/import-people.mjs --clear --prod",
     "secrets": "node scripts/push-secrets.mjs",
@@ -33,7 +33,7 @@
     "deploy": "npm run deploy -w @dastaan/others-api && npm run cf:deploy -w @dastaan/others-web",
     "dev:api": "node scripts/sync-env.mjs && wrangler dev -c others/api/wrangler.json --port 8787 --persist-to .data",
     "dev:web": "npm run dev -w @dastaan/others-web",
-    "db:reset": "wrangler d1 execute dastaan --config database/wrangler.json --local --persist-to .data --file database/seed/reset.sql && npm run db:seed && npm run db:sample"
+    "db:reset": "wrangler d1 execute dastaan --config wrangler.json --local --persist-to .data --file database/seed/reset.sql && npm run db:seed && npm run db:sample"
   },
   "devDependencies": {
     "concurrently": "^9.1.0",

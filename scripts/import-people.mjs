@@ -218,7 +218,7 @@ try {
   const target = prod ? ['--remote'] : ['--local', '--persist-to', '.data'];
   // Bring the database structure up to date first (for example, several Leads per committee needs migration 0005).
   console.log('Checking the database structure...');
-  execFileSync('npx', ['wrangler', 'd1', 'migrations', 'apply', 'dastaan', '--config', 'database/wrangler.json', ...target], { cwd: root, stdio: 'inherit', shell: process.platform === 'win32' });
-  execFileSync('npx', ['wrangler', 'd1', 'execute', 'dastaan', '--config', 'database/wrangler.json', ...target, '--file', tmp, ...(prod ? ['--yes'] : [])], { cwd: root, stdio: 'inherit', shell: process.platform === 'win32' });
+  execFileSync('npx', ['wrangler', 'd1', 'migrations', 'apply', 'dastaan', '--config', 'wrangler.json', ...target], { cwd: root, stdio: 'inherit', shell: process.platform === 'win32' });
+  execFileSync('npx', ['wrangler', 'd1', 'execute', 'dastaan', '--config', 'wrangler.json', ...target, '--file', tmp, ...(prod ? ['--yes'] : [])], { cwd: root, stdio: 'inherit', shell: process.platform === 'win32' });
   console.log(`\nDone. ${clear ? 'The database was cleared and ' : ''}${people.length} people were saved to the ${prod ? 'PRODUCTION' : 'local'} database.\nEveryone signs in with their college email and the code sent to it. The Admin signs in again (all sessions were ${clear ? 'cleared' : 'kept'}).${clear ? '\nIf you have the app open, sign out and sign in again.' : ''}`);
 } finally { rmSync(tmp, { force: true }); }
