@@ -1,0 +1,13 @@
+# The real member list. Fill this in, then run:  npm run db:people   (local)   or   npm run db:people:prod   (production)
+# One person per line. Lines starting with # are ignored. Running it again updates people by email, so it is safe to repeat.
+#
+# role          convenor | lead | member
+# committee     Events | Media | Marketing | Sponsorship | Operations | Administration   (leave empty for a convenor)
+# sub_committee members only: the exact sub-committee name, for example "Technical Events" (see database/seed/seed.sql)
+# phone         optional
+#
+# Example rows (remove the # to use):
+# Asha Menon,asha@example.com,convenor,,,+91 90000 00000
+# Ravi Kumar,ravi@example.com,lead,Events,,
+# Nisha Rao,nisha@example.com,member,Events,Technical Events,
+name,email,role,committee,sub_committee,phone

@@ -1,0 +1,20 @@
+{
+  "name": "@dastaan/others-api",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8787 --inspector-port 9229 --persist-to ../../.data",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dastaan/core": "*",
+    "@dastaan/shared": "*"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250800.0",
+    "typescript": "^5.9.2",
+    "wrangler": "^4.30.0"
+  }
+}

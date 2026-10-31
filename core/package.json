@@ -1,0 +1,23 @@
+{
+  "name": "@dastaan/core",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "All server logic shared by the three APIs: database access, rules, routes, email.",
+  "main": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@dastaan/shared": "*",
+    "hono": "^4.9.0",
+    "worker-mailer": "^1.2.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250800.0",
+    "typescript": "^5.9.2",
+    "vitest": "~3.2.4"
+  }
+}

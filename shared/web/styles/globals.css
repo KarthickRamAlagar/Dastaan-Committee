@@ -1,0 +1,73 @@
+@import '@fontsource-variable/inter';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Default theme: warm charcoal, matching the Dastaan site background. */
+  :root {
+    --background: 24 22% 6%;
+    --foreground: 34 32% 94%;
+    --card: 24 18% 10%;
+    --card-foreground: 34 32% 94%;
+    --muted: 26 14% 15%;
+    --muted-foreground: 32 12% 66%;
+    --border: 28 18% 20%;
+    --input: 28 18% 24%;
+    --ring: 38 96% 56%;
+    --primary: 38 96% 56%;
+    --primary-foreground: 28 60% 8%;
+    --ember: 18 90% 58%;
+    --danger: 0 82% 64%;
+    --success: 152 58% 48%;
+    --info: 205 85% 62%;
+    color-scheme: dark;
+  }
+  .light {
+    --background: 36 38% 95%;
+    --foreground: 24 30% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 24 30% 11%;
+    --muted: 34 28% 92%;
+    --muted-foreground: 26 12% 38%;
+    --border: 32 22% 84%;
+    --input: 32 22% 78%;
+    --ring: 30 94% 42%;
+    --primary: 30 94% 44%;
+    --primary-foreground: 0 0% 100%;
+    --ember: 14 82% 46%;
+    --danger: 0 72% 46%;
+    --success: 154 62% 30%;
+    --info: 208 80% 38%;
+    color-scheme: light;
+  }
+  * { border-color: hsl(var(--border)); }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    @apply min-h-screen bg-background font-sans text-foreground antialiased;
+    background-image:
+      radial-gradient(900px 520px at 6% -4%, hsl(32 70% 28% / 0.38), transparent 62%),
+      linear-gradient(115deg, hsl(26 28% 12%) 0%, hsl(24 18% 8%) 40%, hsl(0 0% 4.5%) 100%);
+    background-attachment: fixed;
+  }
+  .light body, html.light body {
+    background-image:
+      radial-gradient(900px 520px at 6% -4%, hsl(36 95% 80% / 0.65), transparent 62%),
+      linear-gradient(115deg, hsl(38 45% 94%) 0%, hsl(36 30% 96%) 50%, hsl(30 20% 98%) 100%);
+  }
+  h1, h2, h3 { @apply font-display tracking-tight; }
+  :focus-visible { @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background; }
+  ::selection { background: hsl(var(--primary) / 0.35); }
+}
+
+@layer components {
+  .panel { @apply rounded-2xl border border-border bg-card/80 shadow-[0_1px_0_0_hsl(0_0%_100%/0.04)_inset,0_12px_32px_-18px_hsl(0_0%_0%/0.6)] backdrop-blur-md; }
+  .light .logo-mono { filter: brightness(0) opacity(0.88); }
+  .light .panel { @apply shadow-[0_1px_2px_hsl(30_20%_30%/0.08),0_14px_30px_-20px_hsl(30_30%_30%/0.35)]; }
+  .scroll-thin { scrollbar-width: thin; scrollbar-color: hsl(var(--border)) transparent; }
+  .tabular { font-variant-numeric: tabular-nums; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
