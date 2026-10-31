@@ -3,6 +3,7 @@ import { addMinutes, first, newId, nowIso, run } from '../lib/db.js';
 import { hmacHex, sixDigitCode } from '../lib/crypto.js';
 import { audit } from '../lib/audit.js';
 import { assertEmailAllowed } from '../lib/college-email.js';
+import { sendMail } from '../lib/mail/queue.js';
 import { conflict, HttpError, notFound } from '../lib/errors.js';
 import { all } from '../lib/db.js';
 import { OTP_MINUTES, ROLE_LABEL } from '@dastaan/shared';
@@ -24,7 +25,7 @@ export async function issueOtp(
       .prepare('INSERT INTO otps (id, email, code_hash, expires_at, created_at) VALUES (?,?,?,?,?)')
       .bind(newId(), email, await otpHash(env, email, code), addMinutes(OTP_MINUTES), nowIso()),
   ]);
-  await env.MAIL_QUEUE.send({ type: 'otp', to: email, name: user.name, code, role: user.role, welcome });
+  await sendMail(env, { type: 'otp', to: email, name: user.name, code, role: user.role, welcome });
 }
 
 export interface NewPerson {
@@ -62,7 +63,7 @@ export async function createPerson(env: Bindings, actor: SessionUser, p: NewPers
   await issueOtp(env, { name: p.name, email: p.email, role: p.role }, { by: actor.name, role: roleLabel, committee: committeeName });
   const recipients = (await convenorEmails(db)).filter((e) => e.toLowerCase() !== p.email.toLowerCase());
   if (recipients.length) {
-    await env.MAIL_QUEUE.send({ type: 'user-created', to: recipients, newUser: { name: p.name, email: p.email, role: roleLabel, committee: committeeName }, by: `${actor.name} (${ROLE_LABEL[actor.role]})` });
+    await sendMail(env, { type: 'user-created', to: recipients, newUser: { name: p.name, email: p.email, role: roleLabel, committee: committeeName }, by: `${actor.name} (${ROLE_LABEL[actor.role]})` });
   }
   await notify(db, (await convenorIds(db)).filter((x) => x !== id), {
     title: `New ${roleLabel} added`,

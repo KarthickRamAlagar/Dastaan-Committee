@@ -2,8 +2,10 @@ import type { PortalId } from '@dastaan/shared';
 
 export interface Bindings {
   DB: D1Database;
-  FILES: R2Bucket;
-  MAIL_QUEUE: Queue<MailJob>;
+  /** Optional. When no R2 bucket is connected, files are kept inside D1 (see lib/blob.ts). */
+  FILES?: R2Bucket;
+  /** Optional. When no queue is connected, mail is sent directly (see lib/mail/queue.ts). */
+  MAIL_QUEUE?: Queue<MailJob>;
 
   APP_NAME: string;
   /** Shown next to the name in emails, for example "Multi Fest coordination". */

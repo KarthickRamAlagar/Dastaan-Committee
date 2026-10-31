@@ -2,7 +2,7 @@
 
 The Dastaan app for Committee Leads and Members. Committee Leads raise, work on and forward requests. Members do the work they are given. This is the "others" app of the main project.
 
-This is one of three repositories. The other two are **Dastaan-Convenor** and **Dastaan-Admin**. All three use the **same Cloudflare database (`dastaan`) and file bucket (`dastaan-files`)**, so a person created in one app can sign in to their own app.
+This is one of three repositories. The other two are **Dastaan-Convenor** and **Dastaan-Admin**. All three use the **same Cloudflare D1 database (`dastaan`)**, which also holds the uploaded files, so a person created in one app can sign in to their own app.
 
 | Folder | What it is |
 |---|---|

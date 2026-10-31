@@ -1,3 +1,4 @@
+import { sendMail } from '../lib/mail/queue.js';
 import { Hono } from 'hono';
 import { assignBody, commentBody, createTicketBody, forwardBody, redoBody, statusBody, STATUS_LABEL, PRIORITY_LABEL } from '@dastaan/shared';
 import type { AppEnv } from '../env.js';
@@ -118,7 +119,7 @@ tickets.post('/:id/assign', async (c) => {
   const ctx = await ticketContext(c.env.DB, t.id);
   await notify(c.env.DB, [b.assigneeId], { title: 'A request was assigned to you', body: ctx ? contextSummary(ctx.ticket) : t.title, byId: me.id, link: `/tickets/${t.id}` });
   // The full requirement, the committee-to-committee notes and every file travel with it, as links that work for 14 days.
-  await c.env.MAIL_QUEUE.send({ type: 'ticket-context', userId: b.assigneeId, ticketId: t.id, reason: 'assigned', byName: me.name });
+  await sendMail(c.env, { type: 'ticket-context', userId: b.assigneeId, ticketId: t.id, reason: 'assigned', byName: me.name }, (p) => c.executionCtx.waitUntil(p));
   return c.json({ data: { ok: true } });
 });
 
@@ -163,7 +164,7 @@ tickets.post('/:id/forward', async (c) => {
   const nextLeads = await leadsOf(db, b.toCommitteeId);
   const fctx = await ticketContext(db, t.id);
   await notify(db, nextLeads, { title: 'Work was forwarded to your committee', body: fctx ? contextSummary(fctx.ticket) : `${t.title}, from ${me.committeeName}`, byId: me.id, link: `/tickets/${t.id}` });
-  for (const l of nextLeads) await c.env.MAIL_QUEUE.send({ type: 'ticket-context', userId: l, ticketId: t.id, reason: 'forwarded', byName: me.name });
+  await sendMail(c.env, nextLeads.map((l) => ({ type: 'ticket-context' as const, userId: l, ticketId: t.id, reason: 'forwarded' as const, byName: me.name })), (p) => c.executionCtx.waitUntil(p));
   await notify(db, [...(await convenorIds(db)), t.requester_id], { title: `Request moved to ${next.name}`, body: `${t.title}. ${me.committeeName} finished their part.`, byId: me.id, link: `/tickets/${t.id}` });
   await audit(db, me, 'ticket.forward', 'ticket', t.id, { from: t.to_committee_id, to: b.toCommitteeId }, c.get('ip'));
   return c.json({ data: { ok: true } });

@@ -59,3 +59,38 @@ export async function consumeMail(batch: MessageBatch<MailJob>, env: Bindings) {
     await mailer.close().catch(() => {});
   }
 }
+
+/** Sends one job right now (used when no queue is connected). Tries a few times, then logs and gives up. */
+async function deliverNow(env: Bindings, jobs: MailJob[]) {
+  for (const job of jobs) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      let mailer: Mailer | null = null;
+      try {
+        mailer = await openMailer(env);
+        await handle(env, mailer, job);
+        break;
+      } catch (e) {
+        console.error(`mail job ${job.type} failed (attempt ${attempt + 1} of 3)`, e);
+        if (attempt < 2) await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+      } finally {
+        await mailer?.close().catch(() => {});
+      }
+    }
+  }
+}
+
+/**
+ * Sends mail jobs. With a queue connected they go to the queue (retried by Cloudflare). Without one they are sent directly:
+ * in the background when `waitUntil` is given, otherwise before this call returns (sign-in codes use that, so the code is on its way
+ * before the page says "sent").
+ */
+export async function sendMail(env: Bindings, jobs: MailJob | MailJob[], waitUntil?: (p: Promise<unknown>) => void) {
+  const list = Array.isArray(jobs) ? jobs : [jobs];
+  if (env.MAIL_QUEUE) {
+    for (const j of list) await env.MAIL_QUEUE.send(j);
+    return;
+  }
+  const work = deliverNow(env, list);
+  if (waitUntil) waitUntil(work);
+  else await work;
+}

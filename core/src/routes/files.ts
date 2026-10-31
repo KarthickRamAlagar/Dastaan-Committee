@@ -8,6 +8,7 @@ import { HttpError, notFound, forbidden } from '../lib/errors.js';
 import { extOf, isBlockedForMail, magicMatches, MIME_BY_EXT, verifyFileSignature } from '../lib/files.js';
 import { limit } from '../lib/ratelimit.js';
 import { canSee } from '../services/tickets.js';
+import { deleteBlob, getBlob, putBlobD1 } from '../lib/blob.js';
 
 export const files = new Hono<AppEnv>();
 
@@ -23,7 +24,7 @@ const cleanName = (n: string) =>
   n.replace(/[\\/\u0000-\u001f"<>|:*?]+/g, '_').replace(/^\.+/, '').trim().slice(0, 120) || 'file';
 
 /**
- * Raw upload: the file is the request body, so it streams straight into R2 without being held in memory.
+ * Raw upload: the file is the request body. With R2 it streams straight in; without R2 it is stored in D1, 1 MB at a time.
  * The browser compresses big files first and tells us the original size in X-Original-Size.
  */
 files.post('/', requireAuth, async (c) => {
@@ -50,31 +51,49 @@ files.post('/', requireAuth, async (c) => {
   const firstChunk = await reader.read();
   const head = firstChunk.value ?? new Uint8Array();
   if (!magicMatches(ext, head.slice(0, 16))) throw new HttpError(415, 'BAD_TYPE', 'The file content does not match its name');
-  const { readable, writable } = new FixedLengthStream(length);
-  const pump = (async () => {
-    const w = writable.getWriter();
-    try {
-      if (firstChunk.value) await w.write(firstChunk.value);
-      while (!firstChunk.done) {
-        const n = await reader.read();
-        if (n.done) break;
-        await w.write(n.value);
-      }
-      await w.close();
-    } catch (e) {
-      await w.abort(e).catch(() => {});
-    }
-  })();
-
   const id = newId();
   const key = `${kind}/${new Date().toISOString().slice(0, 7)}/${id}`;
   const mime = MIME_BY_EXT[ext] ?? 'application/octet-stream';
-  try {
-    await c.env.FILES.put(key, readable, { httpMetadata: { contentType: mime }, customMetadata: { name, uploader: me.id } });
-  } catch {
-    throw new HttpError(400, 'UPLOAD_FAILED', 'The upload did not finish. Please try again.');
+  if (c.env.FILES) {
+    // R2 is connected: stream the file straight in without holding it in memory.
+    const { readable, writable } = new FixedLengthStream(length);
+    const pump = (async () => {
+      const w = writable.getWriter();
+      try {
+        if (firstChunk.value) await w.write(firstChunk.value);
+        while (!firstChunk.done) {
+          const n = await reader.read();
+          if (n.done) break;
+          await w.write(n.value);
+        }
+        await w.close();
+      } catch (e) {
+        await w.abort(e).catch(() => {});
+      }
+    })();
+    try {
+      await c.env.FILES.put(key, readable, { httpMetadata: { contentType: mime }, customMetadata: { name, uploader: me.id } });
+    } catch {
+      throw new HttpError(400, 'UPLOAD_FAILED', 'The upload did not finish. Please try again.');
+    }
+    await pump;
+  } else {
+    // No R2: keep the file inside the D1 database, 1 MB at a time.
+    const parts = (async function* () {
+      if (firstChunk.value) yield firstChunk.value;
+      while (!firstChunk.done) {
+        const n = await reader.read();
+        if (n.done) break;
+        yield n.value;
+      }
+    })();
+    try {
+      await putBlobD1(c.env.DB, key, parts, length);
+    } catch {
+      await deleteBlob(c.env, key).catch(() => {});
+      throw new HttpError(400, 'UPLOAD_FAILED', 'The upload did not finish. Please try again.');
+    }
   }
-  await pump;
   const orig = Number(c.req.header('x-original-size'));
   await run(
     c.env.DB,
@@ -107,11 +126,11 @@ files.get('/:id', async (c) => {
     else if (a.ticket_id && a.committed) allowed = await canSee(c.env.DB, u, a.ticket_id);
   }
   if (!allowed) throw notFound('That file');
-  const obj = await c.env.FILES.get(a.r2_key);
-  if (!obj) throw notFound('That file');
+  const body = await getBlob(c.env, a.r2_key, a.size);
+  if (!body) throw notFound('That file');
   const inline = c.req.query('inline') === '1' && a.mime.startsWith('image/') && a.mime !== 'image/svg+xml';
   const safeName = encodeURIComponent(a.name);
-  return new Response(obj.body, {
+  return new Response(body, {
     headers: {
       'Content-Type': inline ? a.mime : 'application/octet-stream',
       'Content-Length': String(a.size),

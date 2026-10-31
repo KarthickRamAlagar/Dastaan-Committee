@@ -27,10 +27,10 @@ export const PAGE_SIZE = 7;
 export const COMPRESS_ABOVE_BYTES = 20 * 1024 * 1024;
 /** The most the browser will accept to compress. */
 export const MAX_PICK_BYTES = 200 * 1024 * 1024;
-/** The most the server will store for one ticket file, after compression. */
-export const MAX_STORED_BYTES = 50 * 1024 * 1024;
-/** Mass-mail files: stored in R2 and linked from the email. */
-export const MAX_MAIL_FILE_BYTES = 50 * 1024 * 1024;
+/** The most the server will store for one ticket file, after compression. Files live inside the D1 database, 1 MB at a time. */
+export const MAX_STORED_BYTES = 25 * 1024 * 1024;
+/** Mass-mail files: stored with the other files and linked from the email. */
+export const MAX_MAIL_FILE_BYTES = 25 * 1024 * 1024;
 
 export const TICKET_FILE_EXTENSIONS = [
   'jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'pdf', 'doc', 'docx', 'ppt', 'pptx',

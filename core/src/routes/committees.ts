@@ -7,17 +7,18 @@ import { all, first, newId, nowIso, run } from '../lib/db.js';
 import { conflict, forbidden, notFound } from '../lib/errors.js';
 import { audit } from '../lib/audit.js';
 import { consumeGrant } from '../services/grants.js';
+import { deleteBlob, getBlob } from '../lib/blob.js';
 
 export const committees = new Hono<AppEnv>();
 
 /** Public so the sign-in page and emails can show logos. Logos hold nothing private. */
 committees.get('/:id/logo', async (c) => {
-  const row = await first<{ logo_key: string | null }>(c.env.DB, 'SELECT logo_key FROM committees WHERE id = ?', c.req.param('id'));
+  const row = await first<{ logo_key: string | null; mime: string | null; size: number | null }>(c.env.DB, 'SELECT c.logo_key, a.mime, a.size FROM committees c LEFT JOIN attachments a ON a.r2_key = c.logo_key WHERE c.id = ?', c.req.param('id'));
   if (!row?.logo_key) return c.body(null, 404);
-  const obj = await c.env.FILES.get(row.logo_key);
-  if (!obj) return c.body(null, 404);
-  return new Response(obj.body, {
-    headers: { 'Content-Type': obj.httpMetadata?.contentType ?? 'image/png', 'Cache-Control': 'public, max-age=3600', 'Content-Security-Policy': "default-src 'none'; sandbox", 'X-Content-Type-Options': 'nosniff' },
+  const body = await getBlob(c.env, row.logo_key, row.size ?? 0);
+  if (!body) return c.body(null, 404);
+  return new Response(body, {
+    headers: { 'Content-Type': row.mime ?? 'image/png', 'Cache-Control': 'public, max-age=3600', 'Content-Security-Policy': "default-src 'none'; sandbox", 'X-Content-Type-Options': 'nosniff' },
   });
 });
 
@@ -48,7 +49,7 @@ async function applyLogo(c: import('hono').Context<AppEnv>, committeeId: string,
     c.env.DB.prepare('UPDATE committees SET logo_key = ? WHERE id = ?').bind(a.r2_key, committeeId),
     c.env.DB.prepare('UPDATE attachments SET committed = 1 WHERE id = ?').bind(attachmentId),
   ]);
-  if (old?.logo_key && old.logo_key !== a.r2_key) c.executionCtx.waitUntil(c.env.FILES.delete(old.logo_key));
+  if (old?.logo_key && old.logo_key !== a.r2_key) c.executionCtx.waitUntil(deleteBlob(c.env, old.logo_key));
 }
 
 /** Names only, so a request can be addressed to a person in another committee. */

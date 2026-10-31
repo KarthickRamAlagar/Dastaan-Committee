@@ -35,7 +35,7 @@ Sign-in codes appear in the terminal running the APIs while `EMAIL_MODE=log`. Wi
 
 **How do new members get in?** The member list is loaded from a spreadsheet (`database/seed/people.csv`). People enter their email in their app and receive a code. No passwords to hand out.
 
-**What does it cost to run?** Cloudflare Workers, D1, R2 and Queues for a fest of this size fit within low-cost plans; check the current Cloudflare pricing page before the review.
+**What does it cost to run?** Cloudflare Workers and D1 (no R2, no Queues) for a fest of this size fit within low-cost plans; check the current Cloudflare pricing page before the review.
 
 ## 4. Before the review
 

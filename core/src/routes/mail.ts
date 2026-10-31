@@ -7,6 +7,7 @@ import { all, chunk, first, newId, nowIso } from '../lib/db.js';
 import { forbidden, HttpError } from '../lib/errors.js';
 import { limit } from '../lib/ratelimit.js';
 import { audit } from '../lib/audit.js';
+import { sendMail } from '../lib/mail/queue.js';
 import { convenorEmails, notify } from '../services/notify.js';
 
 export const mail = new Hono<AppEnv>();
@@ -73,9 +74,7 @@ mail.post('/', async (c) => {
   // Convenors are copied once (on the first batch), not once per batch.
   if (emailToo) {
     const batches = chunk(rows.map((r) => r.email), 40);
-    for (const [i, group] of batches.entries()) {
-      await c.env.MAIL_QUEUE.send({ type: 'broadcast', mailId, bcc: group, cc: i === 0 ? cc : [], replyTo: me.email });
-    }
+    await sendMail(c.env, batches.map((group, i) => ({ type: 'broadcast' as const, mailId, bcc: group, cc: i === 0 ? cc : [], replyTo: me.email })), (p) => c.executionCtx.waitUntil(p));
   }
   await notify(db, rows.map((r) => r.id), { title: b.subject, body: b.body, byId: me.id, max: 4000 });
   if (me.role === 'lead') await notify(db, (await all<{ id: string }>(db, "SELECT id FROM users WHERE role = 'convenor' AND deleted_at IS NULL")).map((r) => r.id), { title: `${me.committeeName} Lead sent: ${b.subject}`, body: b.body, byId: me.id, max: 4000 });

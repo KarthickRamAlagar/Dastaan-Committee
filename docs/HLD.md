@@ -36,14 +36,8 @@ flowchart LR
   SA --> D1[(One D1 database)]
   SC --> D1
   SO --> D1
-  SA --> R2[(One R2 bucket)]
-  SC --> R2
-  SO --> R2
-  SA --> QA[[mail queue: admin]]
-  SC --> QC[[mail queue: convenor]]
-  SO --> QO[[mail queue: others]]
-  QA --> MAIL[[SMTP provider]]
-  QC --> MAIL
+  SA --> MAIL[[SMTP provider]]
+  SC --> MAIL
   QO --> MAIL
   classDef p fill:#fff,stroke:#999
 ```
@@ -65,10 +59,9 @@ flowchart TB
     D3x -- "/api/*" --> S3["Worker: dastaan-admin-api"]
   end
   S1 & S2 & S3 --> DB[(D1: dastaan)]
-  S1 & S2 & S3 --> FS[(R2: dastaan-files)]
 ```
 
-Six Workers, one database, one bucket. Each app deploys on its own: `npm run deploy:others`, `deploy:convenor`, `deploy:admin`.
+Six Workers, one D1 database. Uploaded files live in that database too (1 MB pieces, up to 25 MB per file), so there is no bucket to manage. Each app deploys on its own: `npm run deploy:others`, `deploy:convenor`, `deploy:admin`.
 
 ## 5. One database, many servers: concurrency and latency
 
@@ -130,15 +123,14 @@ Raised and forwarded in the Others app, reviewed in the Convenor app, same datab
 
 ```mermaid
 flowchart LR
-  A[Any API action] --> Q[[own mail queue]]
-  Q --> C[consumeMail]
+  A[Any API action] --> C[send mail in the background]
   C -->|smtp| S[[SMTP server]]
   C -->|log| L[(dev outbox + terminal)]
   C -->|off| X[nothing]
-  C -. failure .-> Q
+  C -. failure .-> C
 ```
 
-Retries with back-off (6 tries), then a dead-letter queue. A slow mail server never slows a page.
+Three tries with a short wait, then the failure is logged. Sign-in codes are sent before the page answers; everything else is sent in the background after the page answers, so a slow mail server never slows a page. If a Cloudflare Queue is connected later (`MAIL_QUEUE`), mail goes through it instead, with six retries and a dead-letter queue.
 
 ## 7. Security
 
@@ -156,4 +148,4 @@ Trade-off made on purpose: when someone enters their email in the wrong app, the
 
 ## 8. Technology
 
-Next.js 15 (App Router) on Cloudflare Workers via OpenNext · React 19 · Tailwind · TanStack Query · Hono on Workers · D1 · R2 · Queues · SMTP · zod (one set of rules for browser and server) · Inter font.
+Next.js 15 (App Router) on Cloudflare Workers via OpenNext · React 19 · Tailwind · TanStack Query · Hono on Workers · D1 · SMTP · zod (one set of rules for browser and server) · Inter font.

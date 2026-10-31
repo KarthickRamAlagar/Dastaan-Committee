@@ -90,7 +90,7 @@ others/api/
 | grants (permissions) | | ✔ | ✔ |
 | system (test email) | | | ✔ |
 
-Admin also runs the hourly cleanup cron. Each API consumes its own mail queue.
+Admin also runs the hourly cleanup cron. Mail is sent directly (or through a queue when one is connected).
 
 ### 3.2 Request pipeline
 
@@ -151,7 +151,7 @@ Job types: `otp`, `user-created`, `ticket-context`, `broadcast`. `smtpSettings()
 
 1. Look up the person. If their role belongs to another app: `WRONG_PORTAL` (nothing is mailed).
 2. Rate limit: 1 code per 30 s and 6 per hour per email; 25 per 10 min per address.
-3. Store only an HMAC of the 6-digit code; cancel older codes; queue the email.
+3. Store only an HMAC of the 6-digit code; keep earlier codes valid; send the email.
 4. Verify: 5 tries, 30 minutes, constant-time compare, then create the session.
 
 ## 4. Database (`database/`)

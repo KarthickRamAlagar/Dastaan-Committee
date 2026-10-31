@@ -19,29 +19,6 @@
       "database_id": "00000000-0000-0000-0000-000000000000"
     }
   ],
-  "r2_buckets": [
-    {
-      "binding": "FILES",
-      "bucket_name": "dastaan-files"
-    }
-  ],
-  "queues": {
-    "producers": [
-      {
-        "binding": "MAIL_QUEUE",
-        "queue": "dastaan-mail-others"
-      }
-    ],
-    "consumers": [
-      {
-        "queue": "dastaan-mail-others",
-        "max_batch_size": 10,
-        "max_batch_timeout": 1,
-        "max_retries": 6,
-        "dead_letter_queue": "dastaan-mail-others-dlq"
-      }
-    ]
-  },
   "routes": [
     {
       "pattern": "committee.dastaan.example.edu/api/*",
